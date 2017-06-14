@@ -814,6 +814,30 @@ def initDB(clusterNode, clusterName):
                 logging.debug('InitDB returned: ' + str(return_code))
                 print('InitDB Failed with return Code: ' + str(return_code))
                 sys.exit('Look at your DEBUG log file for details.')
+
+            (stdin, stdout, stderr) = ssh.exec_command(
+                "source /usr/local/greenplum-db/greenplum_path.sh; gpperfmon_install --port 5432 --enable --password foo")
+            return_code = stdout.channel.recv_exit_status()
+            logging.debug(stdout.readlines())
+            logging.debug(stderr.readlines())
+            if return_code != 0:
+                logging.info('gpperfmon install failed')
+                logging.debug('gpperfmon returned: ' + str(return_code))
+                print('gpperfmon Failed with return Code: ' + str(return_code))
+                sys.exit('Look at your DEBUG log file for details.')
+
+            logging.info('gpperfmon set. Restarting GPDB')
+            (stdin, stdout, stderr) = ssh.exec_command(
+                "source /usr/local/greenplum-db/greenplum_path.sh;gpstop -ar")
+            return_code = stdout.channel.recv_exit_status()
+            logging.debug(stdout.readlines())
+            logging.debug(stderr.readlines())
+            if return_code !=0:
+                logging.info('Restart GPDB failed')
+                logging.debug('Restart GPDB returned: ' + str(return_code))
+                print('Restart GPDB Failed with return Code: ' + str(return_code))
+                print('Look at your DEBUG log file for details. Will Continue.')
+
             if 'yes' in os.environ["SET_GUCS"]:
                 (stdin, stdout, stderr) = ssh.exec_command(
                     "source /usr/local/greenplum-db/greenplum_path.sh;/tmp/set_specific_GUCs.sh")
